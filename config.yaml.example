@@ -31,4 +31,4 @@ ansible:
   variables:
     REG_CODE: <YOUR_CODE>
     EMAIL: <YOUR_REG_EMAIL>
-    SAPCONF: true
+    SAPCONF: false

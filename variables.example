@@ -1,6 +1,6 @@
 PROVIDER='azure'
 REG_CODE='SOME-SCC-CODE'
 EMAIL='your.name@something.com'
-SAPCONF='true'
+SAPCONF='false'
 
 export REG_CODE EMAIL SAPCONF

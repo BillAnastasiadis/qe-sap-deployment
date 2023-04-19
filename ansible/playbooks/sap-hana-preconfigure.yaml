@@ -93,12 +93,12 @@
 
     - name: Configure sapconf based systems
       ansible.builtin.include_tasks: ./tasks/sapconf.yaml
-      when: use_sapconf | bool
+      when: not use_sapconf | bool
 
     # saptune to be handled here with more included tasks!
     - name: Configure saptune based systems
       ansible.builtin.include_tasks: ./tasks/saptune.yaml
-      when: not use_sapconf | bool
+      when: use_sapconf | bool
 
   handlers:
     - name: Reboot
