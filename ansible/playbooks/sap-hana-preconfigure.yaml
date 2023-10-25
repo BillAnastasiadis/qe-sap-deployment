@@ -89,4 +89,4 @@
   handlers:
     - name: Reboot
       ansible.builtin.reboot:
-        reboot_timeout: "{{ use_reboottimeout | int }}"
+        reboot_timeout: "{{ (use_reboottimeout | int) + 600 }}"
