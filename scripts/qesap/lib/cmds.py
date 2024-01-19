@@ -290,7 +290,8 @@ def ansible_command_sequence(configure_data_ansible, base_project, sequence, ver
     original_env = dict(os.environ)
     original_env['ANSIBLE_PIPELINING'] = 'True'
     if profile:
-        original_env['ANSIBLE_CALLBACK_WHITELIST'] = 'ansible.posix.profile_tasks'
+        original_env['ANSIBLE_CALLBACK_WHITELIST'] = 'json,ansible.posix.profile_tasks'
+        original_env['ANSIBLE_CONFIG'] = '/root/qe-sap-deployment/ansible.cfg'
     if 'roles_path' in configure_data_ansible:
         original_env['ANSIBLE_ROLES_PATH'] = configure_data_ansible['roles_path']
 
