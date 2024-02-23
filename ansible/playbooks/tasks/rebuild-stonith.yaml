@@ -27,6 +27,10 @@
     cmd: "crm configure delete {{ sbd_device_name }}"
   when: sbd_device_name != 'NOresourcesconfigured'  # If no stonith was found 'NOresourcesconfigured' should be registered in {{ sbd_device_name }}
 
+- name: Wait
+  pause:
+    seconds: 20
+
 - name: Create new SBD stonith device
   ansible.builtin.command:
     cmd: 'sudo crm configure primitive stonith-sbd stonith:external/sbd params pcmk_delay_max="15" op monitor interval="600" timeout="15"'

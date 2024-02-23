@@ -33,6 +33,10 @@
   loop_control:
     label: "{{ item.node_name }}"
 
+- name: Wait for HSR to be enabled on primary
+  pause:
+    seconds: 60
+
 # looping through cluster definition to run on secondary node
 # and apply the respective 'site' value
 - name: "SAP HSR - Register secondary node to HANA System Replication"
@@ -56,6 +60,10 @@
   loop_control:
     label: "{{ item.node_name }}"
 
+- name: Wait for HANA instance to register
+  pause:
+    seconds: 60
+
 - name: "SAP HSR - Start HANA instance on secondary"
   shell: |
     /usr/sap/{{ sap_ha_install_hana_hsr_sid | upper }}/HDB{{ sap_ha_install_hana_hsr_instance_number }}/exe/sapcontrol \
@@ -69,3 +77,7 @@
   when:
     - ansible_hostname != __sap_ha_install_hana_hsr_primary_node
     - ansible_hostname not in __sap_ha_install_hana_hsr_srstate.stdout
+
+- name: Wait for HANA instance to start on secondary
+  pause:
+    seconds: 60
