@@ -51,11 +51,11 @@
   when: hana_topology_clone | length == 0
 
 - name: Create HANA resource
-  ansible.builtin.command: "crm configure primitive {{ rsc_SAPHana }} ocf:suse:SAPHana operations $id=\"rsc_sap_HDB_{{ sap_hana_install_sid }}{{ sap_hana_install_instance_number }}-operations\" op start interval=\"0\" timeout=\"3600\" op stop interval=\"0\" timeout=\"3600\" op promote interval=\"0\" timeout=\"3600\" op monitor interval=\"60\" role=\"Master\" timeout=\"700\" op monitor interval=\"61\" role=\"Slave\" timeout=\"700\" params SID=\"{{ sap_hana_install_sid }}\" InstanceNumber=\"{{ sap_hana_install_instance_number }}\" PREFER_SITE_TAKEOVER=\"true\" DUPLICATE_PRIMARY_TIMEOUT=\"7200\" AUTOMATED_REGISTER=\"false\""
+  ansible.builtin.command: "crm configure primitive {{ rsc_SAPHana }} ocf:suse:SAPHana operations $id=\"rsc_sap_HDB_{{ sap_hana_install_sid }}{{ sap_hana_install_instance_number }}-operations\" op start interval=\"0\" timeout=\"3600\" op stop interval=\"0\" timeout=\"3600\" op promote interval=\"0\" timeout=\"3600\" op monitor interval=\"60\" role=\"Master\" timeout=\"700\" op monitor interval=\"61\" role=\"Slave\" timeout=\"700\" params SID=\"{{ sap_hana_install_sid }}\" InstanceNumber=\"{{ sap_hana_install_instance_number }}\" PREFER_SITE_TAKEOVER=\"true\" DUPLICATE_PRIMARY_TIMEOUT=\"7200\" AUTOMATED_REGISTER=\"false\" meta priority=\"100\""
   when: hana_resource | length == 0
 
 - name: Create HANA resource clone
-  ansible.builtin.command: "crm configure ms msl_SAPHana_HDB_{{ sap_hana_install_sid }}{{ sap_hana_install_instance_number }} {{ rsc_SAPHana }} meta notify=\"true\" clone-max=\"2\" clone-node-max=\"1\" target-role=\"Started\" interleave=\"true\""
+  ansible.builtin.command: "crm configure ms msl_SAPHana_HDB_{{ sap_hana_install_sid }}{{ sap_hana_install_instance_number }} {{ rsc_SAPHana }} meta clone-max=\"2\" clone-node-max=\"1\" target-role=\"Started\" interleave=\"true\" maintenance=\"true\""
   when: hana_resource_clone | length == 0
 
 - name: Validate cluster IP
