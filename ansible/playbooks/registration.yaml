@@ -120,18 +120,6 @@
         - not_registered_found
         - "(is_registercloudguest_bin.rc != 0) or (use_suseconnect | bool)"
 
-    # There are additional repos to add.
-    # These are handled differently for SLES 15 and SLES12
-    - name: Add SLES 12 Advanced Systems Modules
-      ansible.builtin.command: SUSEConnect -p sle-module-adv-systems-management/12/{{ ansible_facts['architecture'] }} -r "{{ reg_code }}"
-      register: result
-      changed_when: result.rc == 0
-      until: result is succeeded
-      retries: 10
-      delay: 60
-      when:
-        - ansible_facts['distribution_major_version'] == "12"
-
     - name: Add SLES 12 public cloud module
       ansible.builtin.command: SUSEConnect -p sle-module-public-cloud/12/{{ ansible_facts['architecture'] }}
       register: result
