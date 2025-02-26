@@ -10,6 +10,10 @@
 
   tasks:
 
+    - name: check guestregister.service status
+      ansible.builtin.command: systemctl status guestregister.service
+      become: true
+
     # Pre flight checks
     - name: Check for SUSEConnect binary presence
       ansible.builtin.command: which SUSEConnect
@@ -105,6 +109,11 @@
         - is_registercloudguest_bin.rc == 0
         - not use_suseconnect | bool
 
+    - name: check guestregister.service status
+      ansible.builtin.command: systemctl status guestregister.service
+      become: true
+
+
     # Fall back on SUSEConnect if:
     #   - registercloudguest is not present
     # or
@@ -180,6 +189,10 @@
       loop_control:
         label: "{{ item.key }}"
 
+    - name: check guestregister.service status
+      ansible.builtin.command: systemctl status guestregister.service
+      become: true
+
     - name: Add additional authenticated modules [registercloudguest]
       ansible.builtin.command: registercloudguest -r {{ item.value }}
       register: result
@@ -194,6 +207,10 @@
       loop: "{{ sles_modules }}"
       loop_control:
         label: "{{ item.key }}"
+      
+    - name: check guestregister.service status
+      ansible.builtin.command: systemctl status guestregister.service
+      become: true
 
     - name: Check if repos are added after registration
       ansible.builtin.command: zypper lr -u
