@@ -4,6 +4,7 @@
   remote_user: cloudadmin
   become: true
   become_user: root
+  gather_facts: false
   environment:
     ZYPP_LOCK_TIMEOUT: '120'
 
@@ -13,6 +14,39 @@
   tasks:
 
     # Pre flight checks
+    - name: GCP guest agents | status (enabled/active)
+      become: false
+      ansible.builtin.shell: |
+        set -euo pipefail
+        for s in google-guest-agent google-guest-configs google-oslogin-cache google-osconfig-agent; do
+          printf "%-24s enabled=%-8s active=%s\n" "$s" \
+            "$(systemctl is-enabled "$s" 2>/dev/null || echo unknown)" \
+            "$(systemctl is-active  "$s" 2>/dev/null || echo unknown)"
+        done
+      register: gcp_agents_status
+      changed_when: false
+      failed_when: false
+
+    - name: GCP guest agents | recent logs
+      become: false
+      ansible.builtin.shell: |
+        set -euo pipefail
+        for s in google-guest-agent google-guest-configs google-oslogin-cache google-osconfig-agent; do
+          echo "- $s HERE THE LOG -"
+          sudo -n journalctl -u "$s" -b --no-pager -n 80
+          echo
+        done
+      register: gcp_agents_logs
+      until: gcp_agents_logs.rc == 0
+      retries: 10
+      delay: 5
+      changed_when: false
+      failed_when: false
+
+    - name: Stop here (intentional fail)
+      ansible.builtin.fail:
+        msg: "Stopping after cloud-init checks (on-purpose fail)"
+
     - name: Check for instance-flavor-check presence
       ansible.builtin.command: which instance-flavor-check
       register: ifc_bin
