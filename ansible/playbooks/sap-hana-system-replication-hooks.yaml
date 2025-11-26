@@ -167,3 +167,34 @@
             - {'regexp': '^{{ sap_hana_install_sid | lower }}adm ALL=(ALL) NOPASSWD', 'line': '{{ sap_hana_install_sid | lower }}adm ALL=(ALL) NOPASSWD: /usr/sbin/crm_attribute -n hana_{{ sap_hana_install_sid | lower }}_*'}
             - {'regexp': '^{{ sap_hana_install_sid | lower }}adm ALL=(ALL) NOPASSWD', 'line': '{{ sap_hana_install_sid | lower }}adm ALL=(ALL) NOPASSWD: /usr/bin/SAPHanaSR-hookHelper --sid={{ sap_hana_install_sid | upper }} *'}
           when: use_hana_sr_angi | bool
+
+        - name: Check SRHOOK attribute for primary
+          become: true
+          ansible.builtin.command: >
+            crm_attribute -G
+            -n hana_{{ sap_hana_install_sid | lower }}_site_srHook_{{ primary_site }}
+            -t crm_config -s SAPHanaSR
+          register: srhook_primary
+          failed_when: false
+          changed_when: false
+
+        - name: Check SRHOOK attribute for secondary
+          become: true
+          ansible.builtin.command: >
+            crm_attribute -G
+            -n hana_{{ sap_hana_install_sid | lower }}_site_srHook_{{ secondary_site }}
+            -t crm_config -s SAPHanaSR
+          register: srhook_secondary
+          failed_when: false
+          changed_when: false
+
+        - name: Show SRHOOK attributes
+          ansible.builtin.debug:
+            msg:
+              - "Primary SRHOOK raw: {{ srhook_primary.stdout | default('no output') }}"
+              - "Secondary SRHOOK raw: {{ srhook_secondary.stdout | default('no output') }}"
+
+        - name: Abort
+          ansible.builtin.fail:
+            msg: >
+              DEBUG STOP: force abort
