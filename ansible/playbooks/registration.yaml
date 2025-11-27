@@ -45,7 +45,6 @@
       delay: 120
       failed_when: repos.rc != 0
       changed_when: false
-      when: ifc_bin.rc != 0
 
     # Check if there are instances of `Not Registered` in it
     - name: Check for 'Not Registered'
@@ -222,8 +221,79 @@
       loop_control:
         label: "{{ item.key }}"
 
+    - name: Flag unexpected unregistered PAYG node
+      ansible.builtin.set_fact:
+        unexpected_unregistered: true
+      when:
+        - not to_be_registered | default(false) | bool
+        - "'Not Registered' in repos.stdout"
+
+    - name: Show cloud registration log files (if any)
+      ansible.builtin.shell: |
+        set -o pipefail
+        for f in \
+          /var/log/cloudregister \
+          /var/log/cloudregister.log \
+          /var/log/cloud-regionsrv-client.log \
+          /var/log/guestregister.log; do
+          if [ -f "$f" ]; then
+            echo "==== $f ===="
+            tail -n 200 "$f"
+          fi
+        done
+      register: cloud_reg_logs
+      changed_when: false
+      failed_when: false
+      when:
+        - unexpected_unregistered | default(false)
+
+    - name: Show journal for cloud guest registration services
+      ansible.builtin.shell: |
+        set -o pipefail
+        journalctl -u registercloudguest \
+                   -u guestregister \
+                   -u regionserverclientd \
+                   -u cloud-regionsrv-client \
+                   --no-pager -n 200 2>&1 || true
+      register: cloud_reg_journal
+      changed_when: false
+      failed_when: false
+      when:
+        - unexpected_unregistered | default(false)
+
+    - name: Print PAYG debug info
+      ansible.builtin.debug:
+        msg:
+          - "===== cloud registration logs ====="
+          - "{{ cloud_reg_logs.stdout | default('No log files found') }}"
+          - "===== journalctl ====="
+          - "{{ cloud_reg_journal.stdout | default('No journal output') }}"
+      when:
+        - unexpected_unregistered | default(false)
+
+    - name: Refresh PAYG registration with registercloudguest --force-new
+      ansible.builtin.command: registercloudguest --force-new
+      register: registercloudguest_refresh
+      until: registercloudguest_refresh.rc == 0
+      retries: 3
+      delay: 60
+      changed_when: registercloudguest_refresh.rc == 0
+      when:
+        - unexpected_unregistered | default(false)
+        - is_registercloudguest_bin.rc == 0
+
+    - name: Re-check registration state after PAYG refresh
+      ansible.builtin.command: SUSEConnect -s
+      register: repos
+      changed_when: false
+      failed_when: false
+      when:
+        - unexpected_unregistered | default(false)
+
     - name: Check if repos are added after registration
       ansible.builtin.command: zypper lr -u
       register: repos_after
-      failed_when: repos_after.rc != 0
+      retries: 5
+      delay: 15
+      until: repos_after.rc == 0
       changed_when: false
