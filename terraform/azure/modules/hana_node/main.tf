@@ -20,6 +20,16 @@ locals {
 
   hana_lb_rules_ports_secondary = local.create_active_active_infra == 1 ? local.hana_lb_rules_ports : toset([])
   hostname                      = var.common_variables["deployment_name_in_hostname"] ? format("%s-%s", var.common_variables["deployment_name"], var.name) : var.name
+  disk_attachments = flatten([
+    for vm_idx in range(var.hana_count) : [
+      for disk_idx in range(local.disks_number) : {
+        key               = "vm${vm_idx}-disk${disk_idx}"
+        vm_index          = vm_idx
+        lun               = disk_idx
+        global_disk_index = (vm_idx * local.disks_number) + disk_idx
+      }
+    ]
+  ])
 }
 
 resource "azurerm_availability_set" "hana-availability-set" {
@@ -376,11 +386,14 @@ resource "azurerm_managed_disk" "hana_data_disk" {
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "hana_data_disk_attachment" {
-  count              = var.hana_count * local.disks_number
-  managed_disk_id    = azurerm_managed_disk.hana_data_disk[count.index].id
-  virtual_machine_id = azurerm_linux_virtual_machine.hana[floor(count.index / local.disks_number)].id
-  lun                = count.index % local.disks_number
-  caching            = element(local.disks_caching, count.index % local.disks_number)
+  # Use for_each instead of count
+  for_each = { for attachment in local.disk_attachments : attachment.key => attachment }
+
+  # Direct references via the flattened map
+  managed_disk_id           = azurerm_managed_disk.hana_data_disk[each.value.global_disk_index].id
+  virtual_machine_id        = azurerm_linux_virtual_machine.hana[each.value.vm_index].id
+  lun                       = each.value.lun 
+  caching                   = element(local.disks_caching, each.value.lun)
   timeouts {
     read = "30m"
   }
